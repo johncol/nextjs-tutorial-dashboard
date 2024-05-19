@@ -5,6 +5,7 @@ import { usePathname, useSearchParams, useRouter } from 'next/navigation';
 import { useDebouncedCallback } from 'use-debounce';
 
 const PARAM_QUERY = 'query';
+const PARAM_PAGE = 'page';
 const DEBOUNCE_WAIT = 600;
 
 export default function Search({ placeholder }: { placeholder: string }) {
@@ -15,11 +16,14 @@ export default function Search({ placeholder }: { placeholder: string }) {
   const handleInputChange = useDebouncedCallback(
     (value: string | undefined) => {
       const params = new URLSearchParams(searchParams);
+      
       if (!value || value.trim() === '') {
         params.delete(PARAM_QUERY);
       } else {
         params.set(PARAM_QUERY, value.trim());
       }
+      params.set(PARAM_PAGE, '1');
+
       router.replace(`${pathname}?${params.toString()}`);
     },
     DEBOUNCE_WAIT,
