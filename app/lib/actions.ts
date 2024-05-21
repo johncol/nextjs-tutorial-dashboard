@@ -82,3 +82,17 @@ const updateInvoiceInDB = ({
       id = ${id}
   `;
 };
+
+export async function deleteInvoice(id: string) {
+  await deleteInvoiceFromDB(id);
+
+  revalidatePath('/dashboard/invoices');
+}
+
+const deleteInvoiceFromDB = (id: string) => {
+  return sql`
+    DELETE FROM Invoices
+    WHERE
+      id = ${id}
+  `;
+};
