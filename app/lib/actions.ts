@@ -24,12 +24,18 @@ export async function createInvoice(formData: FormData) {
   const amountInCents = amount * 100;
   const date = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
 
-  await insertInvoiceInDB({
-    customer_id: customerId,
-    amount: amountInCents,
-    status,
-    date,
-  });
+  try {
+    await insertInvoiceInDB({
+      customer_id: customerId,
+      amount: amountInCents,
+      status,
+      date,
+    });
+  } catch (error) {
+    return {
+      message: 'DB Error: failed to create invoice',
+    }
+  }
 
   revalidatePath('/dashboard/invoices');
   redirect('/dashboard/invoices');
@@ -55,12 +61,18 @@ export async function updateInvoice(id: string, formData: FormData) {
   );
   const amountInCents = amount * 100;
 
-  await updateInvoiceInDB({
-    id,
-    customer_id: customerId,
-    amount: amountInCents,
-    status,
-  });
+  try {
+    await updateInvoiceInDB({
+      id,
+      customer_id: customerId,
+      amount: amountInCents,
+      status,
+    });
+  } catch (error) {
+    return {
+      message: 'DB Error: failed to update invoice',
+    }
+  }
 
   revalidatePath('/dashboard/invoices');
   redirect('/dashboard/invoices');
@@ -84,9 +96,18 @@ const updateInvoiceInDB = ({
 };
 
 export async function deleteInvoice(id: string) {
-  await deleteInvoiceFromDB(id);
+  try {
+    await deleteInvoiceFromDB(id);
+    revalidatePath('/dashboard/invoices');
+    return {
+      message: 'Invoice deleted',
+    }
+  } catch (error) {
+    return {
+      message: 'DB Error: failed to delete invoice',
+    }
+  }
 
-  revalidatePath('/dashboard/invoices');
 }
 
 const deleteInvoiceFromDB = (id: string) => {
