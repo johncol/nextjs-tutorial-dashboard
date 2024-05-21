@@ -96,6 +96,8 @@ const updateInvoiceInDB = ({
 };
 
 export async function deleteInvoice(id: string) {
+  throw new Error('Failed to Delete Invoice');
+
   try {
     await deleteInvoiceFromDB(id);
     revalidatePath('/dashboard/invoices');
