@@ -8,19 +8,47 @@ import { Invoice } from './definitions';
 
 const InvoiceFormSchema = z.object({
   id: z.string(),
-  customerId: z.string(),
-  amount: z.coerce.number(),
-  status: z.enum(['pending', 'paid']),
+  customerId: z.string({
+    required_error: 'Please select a customer',
+  }),
+  amount: z.coerce.number().gt(0, {
+    message: 'Amount must be greater than $0',
+  }),
+  status: z.enum(['pending', 'paid'], {
+    required_error: 'Please select a status',
+  }),
   date: z.string(),
 });
 
 const CreateInvoiceSchema = InvoiceFormSchema.omit({ id: true, date: true });
 const UpdateInvoiceSchema = InvoiceFormSchema.omit({ id: true, date: true });
 
-export async function createInvoice(formData: FormData) {
-  const { amount, customerId, status } = CreateInvoiceSchema.parse(
+export type FormState = {
+  errors?: {
+    customerId?: string[];
+    amount?: string[];
+    status?: string[];
+  };
+  message?: string | null;
+};
+
+export async function createInvoice(
+  _previousState: FormState,
+  formData: FormData,
+) {
+  const parsingOutput = CreateInvoiceSchema.safeParse(
     Object.fromEntries(formData.entries()),
   );
+
+  const formIsValid = parsingOutput.success;
+  if (!formIsValid) {
+    return {
+      errors: parsingOutput.error.flatten().fieldErrors,
+      message: 'Failed to create Invoice due to fields with errors',
+    };
+  }
+
+  const { customerId, amount, status } = parsingOutput.data;
   const amountInCents = amount * 100;
   const date = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
 
@@ -34,7 +62,7 @@ export async function createInvoice(formData: FormData) {
   } catch (error) {
     return {
       message: 'DB Error: failed to create invoice',
-    }
+    };
   }
 
   revalidatePath('/dashboard/invoices');
@@ -71,7 +99,7 @@ export async function updateInvoice(id: string, formData: FormData) {
   } catch (error) {
     return {
       message: 'DB Error: failed to update invoice',
-    }
+    };
   }
 
   revalidatePath('/dashboard/invoices');
@@ -103,13 +131,12 @@ export async function deleteInvoice(id: string) {
     revalidatePath('/dashboard/invoices');
     return {
       message: 'Invoice deleted',
-    }
+    };
   } catch (error) {
     return {
       message: 'DB Error: failed to delete invoice',
-    }
+    };
   }
-
 }
 
 const deleteInvoiceFromDB = (id: string) => {
